@@ -27,6 +27,14 @@ public class GrabObject : MonoBehaviour
     // 원거리에서 물체를 잡을 수 있는 거리
     public float remoteGrabDistance = 20;
 
+    static bool[] istouch = new bool[2];
+
+    public GameObject[] sign = new GameObject[2];
+    public GameObject phone;
+    public GameObject phoneImage;
+    public GameObject warningImage;
+    public GameObject okImage;
+
 
 
     void Start()
@@ -49,7 +57,20 @@ public class GrabObject : MonoBehaviour
             //물체 놓기
             TryUngrab();
         }
+        if (ARAVRInput.GetDown(ARAVRInput.Button.HandTrigger, ARAVRInput.Controller.LTouch))
+        {
+            RaycastHit hit;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Physics.Raycast(ray, out hit);
+            if(hit.collider.tag == "Phone")
+            {
+                Debug.Log("폰");
+                phoneImage.SetActive(true);
+                phone.SetActive(false);
+                
 
+            }
+        }
     }
 
     private void TryUngrab()
@@ -98,18 +119,18 @@ public class GrabObject : MonoBehaviour
                 // 손 방향으로 Ray 제작
                 Ray ray = new Ray(ARAVRInput.RHandPosition, ARAVRInput.RHandDirection);
                 RaycastHit hitInfo;
-
+                
                 // SphereCast를 이용해 물체 충돌을 체크
                 if (Physics.SphereCast(ray, 0.5f, out hitInfo, remoteGrabDistance, grabbedLayer))
                 {
                     // 잡은 상태로 전환
                     isGrabbing = true;
+
                     // 잡은 물체에 대한 기억
                     grabbedObject = hitInfo.transform.gameObject;
                     // 물체가 끌려오는 기능 실행
                     StartCoroutine(GrabbingAnimation());
                 }
-                return;
 
                 //2. 일정영역안에 폭탄이 있을때
                 // 영역안에 있는 모든 폭탄 검출
@@ -140,6 +161,24 @@ public class GrabObject : MonoBehaviour
                     isGrabbing = true;
                     //잡은물체에 대한 기억
                     grabbedObject = hitObjects[closest].gameObject;
+                    if (!istouch[0] || !istouch[1])
+                    {
+                        if (grabbedObject.tag.Equals("NoChair"))
+                        {
+                            warningImage.SetActive(true);
+                            sign[0].SetActive(false);
+                            Destroy(warningImage, 4);
+                            istouch[0] = true;
+                        }
+                        else if (grabbedObject.tag.Equals("Chair"))
+                        {
+                            okImage.SetActive(true);
+                            sign[1].SetActive(false);
+                            Destroy(okImage, 4);
+                            istouch[1] = true;
+                        }
+                    }
+                    
                     //잡은 물체를 손의 자식으로 등록
                     grabbedObject.transform.parent = ARAVRInput.RHand;
                     // 물리 기능정지
